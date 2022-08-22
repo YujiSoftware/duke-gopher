@@ -1,0 +1,16 @@
+{
+    // IntelliSense を使用して利用可能な属性を学べます。
+    // 既存の属性の説明をホバーして表示します。
+    // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Launch Main",
+            "request": "launch",
+            "mainClass": "Main",
+            "projectName": "duke-gopher_6fb48a28",
+            "vmArgs": "-Djava.library.path=${cwd} --add-modules=jdk.incubator.foreign --enable-native-access=ALL-UNNAMED"
+        }
+    ]
+}
