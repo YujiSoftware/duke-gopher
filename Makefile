@@ -1,6 +1,6 @@
 .PHONY: build run
 
-LIBRARY = gopher.so
+LIBRARY = libgopher.so
 ifeq ($(OS),Windows_NT)
     LIBRARY = gopher.dll
 endif
