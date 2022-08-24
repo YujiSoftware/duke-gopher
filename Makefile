@@ -5,13 +5,11 @@ ifeq ($(OS),Windows_NT)
     LIBRARY = gopher.dll
 endif
 
-build: $(LIBRARY) Main.class
+build: $(LIBRARY)
 
 run: build
-	java -Djava.library.path=$(CURDIR) --add-modules=jdk.incubator.foreign --enable-native-access=ALL-UNNAMED Main
+	java -Djava.library.path=$(CURDIR) --add-modules=jdk.incubator.foreign --enable-native-access=ALL-UNNAMED Main.java
+
 
 $(LIBRARY): main.go
 	go build -o $(LIBRARY) -buildmode=c-shared main.go
-
-Main.class: Main.java
-	javac --add-modules=jdk.incubator.foreign Main.java
