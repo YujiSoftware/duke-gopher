@@ -24,7 +24,7 @@ public class Main {
             return memory;
         }
 
-        public static String get(MemoryAddress ptr) {
+        public static String get(MemorySegment ptr) {
             return ptr.getUtf8String(0);
         }
     }
@@ -43,7 +43,7 @@ public class Main {
         SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
         MethodHandle recv = linker.downcallHandle(
                 loaderLookup.lookup("recv").get(),
-                FunctionDescriptor.ofVoid(ADDRESS));
+                FunctionDescriptor.ofVoid(GoString.LAYOUT));
 
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
             recv.invoke(GoString.allocate(message, scope));
@@ -55,9 +55,11 @@ public class Main {
         SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
         MethodHandle recv = linker.downcallHandle(
                 loaderLookup.lookup("send").get(),
-                FunctionDescriptor.of(ADDRESS));
+                FunctionDescriptor.of(GoString.LAYOUT));
 
-        MemoryAddress address = (MemoryAddress) recv.invoke();
-        System.out.println(GoString.get(address));
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment address = (MemorySegment) recv.invoke(scope);
+            System.out.println(GoString.get(address));
+        }
     }
 }
