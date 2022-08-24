@@ -3,6 +3,7 @@ import static jdk.incubator.foreign.ValueLayout.*;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
+import java.nio.charset.StandardCharsets;
 
 public class Main {
     private static class GoString {
@@ -24,8 +25,15 @@ public class Main {
             return memory;
         }
 
-        public static String get(MemorySegment ptr) {
-            return ptr.getUtf8String(0);
+        public static String get(MemorySegment memory) {
+            int capacity = (int) (long) N.get(memory);
+            MemoryAddress ptr = (MemoryAddress) P.get(memory);
+            
+            byte[] b = new byte[capacity];
+            for (int i = 0; i < capacity; i++) {       
+                b[i] = ptr.get(JAVA_BYTE, i);
+            }
+            return new String(b, StandardCharsets.UTF_8);
         }
     }
 
