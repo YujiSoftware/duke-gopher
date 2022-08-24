@@ -3,6 +3,7 @@ import static java.lang.foreign.ValueLayout.*;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
+import java.nio.charset.StandardCharsets;
 
 public class Main19 {
     private static class GoString {
@@ -24,8 +25,15 @@ public class Main19 {
             return memory;
         }
 
-        public static String get(MemoryAddress ptr) {
-            return ptr.getUtf8String(0);
+        public static String get(MemorySegment memory) {
+            int capacity = (int) (long) N.get(memory);
+            MemoryAddress ptr = (MemoryAddress) P.get(memory);
+            
+            byte[] b = new byte[capacity];
+            for (int i = 0; i < capacity; i++) {       
+                b[i] = ptr.get(JAVA_BYTE, i);
+            }
+            return new String(b, StandardCharsets.UTF_8);
         }
     }
 
@@ -43,7 +51,7 @@ public class Main19 {
         SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
         MethodHandle recv = linker.downcallHandle(
                 loaderLookup.lookup("recv").get(),
-                FunctionDescriptor.ofVoid(ADDRESS));
+                FunctionDescriptor.ofVoid(GoString.LAYOUT));
 
         try (MemorySession session = MemorySession.openConfined()) {
             recv.invoke(GoString.allocate(message, session));
@@ -55,9 +63,11 @@ public class Main19 {
         SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
         MethodHandle recv = linker.downcallHandle(
                 loaderLookup.lookup("send").get(),
-                FunctionDescriptor.of(ADDRESS));
+                FunctionDescriptor.of(GoString.LAYOUT));
 
-        MemoryAddress address = (MemoryAddress) recv.invoke();
-        System.out.println(GoString.get(address));
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment address = (MemorySegment) recv.invoke(session);
+            System.out.println(GoString.get(address));
+        }
     }
 }
