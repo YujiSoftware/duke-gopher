@@ -5,17 +5,31 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 
 public class Main {
-    private static final OfAddress POINTER = ADDRESS.withName("p");
-    private static final OfLong NUMBER = JAVA_LONG.withName("n");
+    private static class GoString {
+        private static final OfAddress POINTER = ADDRESS.withName("p");
+        private static final OfLong NUMBER = JAVA_LONG.withName("n");
+    
+        private static final GroupLayout LAYOUT = MemoryLayout.structLayout(POINTER, NUMBER);
+    
+        private static final VarHandle P = LAYOUT.varHandle(PathElement.groupElement(POINTER.name().get()));
+        private static final VarHandle N = LAYOUT.varHandle(PathElement.groupElement(NUMBER.name().get()));
 
-    private static final GroupLayout GO_STRING = MemoryLayout.structLayout(POINTER, NUMBER);
+        public static MemorySegment allocate(String str, ResourceScope scope) {
+            MemorySegment memory = MemorySegment.allocateNative(LAYOUT, scope);
+            
+            MemorySegment cString = SegmentAllocator.implicitAllocator().allocateUtf8String(str);
+            P.set(memory, cString.address());
+            N.set(memory, cString.byteSize());
 
-    private static final VarHandle GO_STRING_P = GO_STRING.varHandle(PathElement.groupElement(POINTER.name().get()));
-    private static final VarHandle GO_STRING_N = GO_STRING.varHandle(PathElement.groupElement(NUMBER.name().get()));
+            return memory;
+        }
+    }
 
-    public static void main(String[] args) throws Throwable {
+    static {
         System.loadLibrary("gopher");
-
+    }
+    
+    public static void main(String[] args) throws Throwable {
         send("Hello Gopher! (from Duke)");
     }
 
@@ -27,12 +41,7 @@ public class Main {
                 FunctionDescriptor.ofVoid(ADDRESS));
 
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment offHeap = MemorySegment.allocateNative(GO_STRING, scope);
-            MemorySegment cString = SegmentAllocator.implicitAllocator().allocateUtf8String(message);
-            GO_STRING_P.set(offHeap, cString.address());
-            GO_STRING_N.set(offHeap, cString.byteSize());
-
-            recv.invoke(offHeap);
+            recv.invoke(GoString.allocate(message, scope));
         }
     }
 }
