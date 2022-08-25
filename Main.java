@@ -16,11 +16,15 @@ public class Main {
         private static final VarHandle N = LAYOUT.varHandle(PathElement.groupElement(NUMBER.name().get()));
 
         public static MemorySegment allocate(String str, ResourceScope scope) {
-            MemorySegment memory = MemorySegment.allocateNative(LAYOUT, scope);
+            byte[] b = str.getBytes(StandardCharsets.UTF_8);
+            MemorySegment ptr = SegmentAllocator.implicitAllocator().allocate(b.length);
+            for (int i = 0; i < b.length; i++) {
+                ptr.set(JAVA_BYTE, i, b[i]);
+            }
 
-            MemorySegment cString = SegmentAllocator.implicitAllocator().allocateUtf8String(str);
-            P.set(memory, cString.address());
-            N.set(memory, cString.byteSize());
+            MemorySegment memory = MemorySegment.allocateNative(LAYOUT, scope);
+            P.set(memory, ptr.address());
+            N.set(memory, ptr.byteSize());
 
             return memory;
         }
