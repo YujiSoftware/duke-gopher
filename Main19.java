@@ -48,9 +48,9 @@ public class Main19 {
 
     private static void send(String message) throws Throwable {
         Linker linker = Linker.nativeLinker();
-        SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
+        SymbolLookup lookup = SymbolLookup.loaderLookup();
         MethodHandle recv = linker.downcallHandle(
-                loaderLookup.lookup("recv").get(),
+            lookup.lookup("recv").get(),
                 FunctionDescriptor.ofVoid(GoString.LAYOUT));
 
         try (MemorySession session = MemorySession.openConfined()) {
@@ -60,9 +60,9 @@ public class Main19 {
 
     private static void recv() throws Throwable {
         Linker linker = Linker.nativeLinker();
-        SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
+        SymbolLookup lookup = SymbolLookup.loaderLookup();
         MethodHandle recv = linker.downcallHandle(
-                loaderLookup.lookup("send").get(),
+                lookup.lookup("send").get(),
                 FunctionDescriptor.of(GoString.LAYOUT));
 
         try (MemorySession session = MemorySession.openConfined()) {

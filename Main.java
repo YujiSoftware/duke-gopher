@@ -48,9 +48,9 @@ public class Main {
 
     private static void send(String message) throws Throwable {
         CLinker linker = CLinker.systemCLinker();
-        SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
+        SymbolLookup lookup = SymbolLookup.loaderLookup();
         MethodHandle recv = linker.downcallHandle(
-                loaderLookup.lookup("recv").get(),
+            lookup.lookup("recv").get(),
                 FunctionDescriptor.ofVoid(GoString.LAYOUT));
 
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
@@ -60,9 +60,9 @@ public class Main {
 
     private static void recv() throws Throwable {
         CLinker linker = CLinker.systemCLinker();
-        SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
+        SymbolLookup lookup = SymbolLookup.loaderLookup();
         MethodHandle recv = linker.downcallHandle(
-                loaderLookup.lookup("send").get(),
+                lookup.lookup("send").get(),
                 FunctionDescriptor.of(GoString.LAYOUT));
 
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
