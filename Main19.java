@@ -32,9 +32,9 @@ public class Main19 {
         public static String get(MemorySegment memory) {
             int capacity = (int) (long) N.get(memory);
             MemoryAddress ptr = (MemoryAddress) P.get(memory);
-            
+
             byte[] b = new byte[capacity];
-            for (int i = 0; i < capacity; i++) {       
+            for (int i = 0; i < capacity; i++) {
                 b[i] = ptr.get(JAVA_BYTE, i);
             }
             return new String(b, StandardCharsets.UTF_8);
@@ -46,31 +46,19 @@ public class Main19 {
     }
 
     public static void main(String[] args) throws Throwable {
-        send("Hello Gopher! (from Duke)");
-        recv();
+        talk("Hello Gopher! (from Duke)");
     }
 
-    private static void send(String message) throws Throwable {
+    private static void talk(String message) throws Throwable {
         Linker linker = Linker.nativeLinker();
         SymbolLookup lookup = SymbolLookup.loaderLookup();
         MethodHandle recv = linker.downcallHandle(
-            lookup.lookup("recv").get(),
-                FunctionDescriptor.ofVoid(GoString.LAYOUT));
+                lookup.lookup("talk").get(),
+                FunctionDescriptor.of(GoString.LAYOUT, GoString.LAYOUT));
 
         try (MemorySession session = MemorySession.openConfined()) {
-            recv.invoke(GoString.allocate(message, session));
-        }
-    }
+            MemorySegment address = (MemorySegment) recv.invoke(GoString.allocate(message, session));
 
-    private static void recv() throws Throwable {
-        Linker linker = Linker.nativeLinker();
-        SymbolLookup lookup = SymbolLookup.loaderLookup();
-        MethodHandle recv = linker.downcallHandle(
-                lookup.lookup("send").get(),
-                FunctionDescriptor.of(GoString.LAYOUT));
-
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment address = (MemorySegment) recv.invoke(session);
             System.out.println(GoString.get(address));
         }
     }

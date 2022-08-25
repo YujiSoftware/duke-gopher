@@ -3,13 +3,10 @@ package main
 import "C"
 import "fmt"
 
-//export recv
-func recv(message string) {
+//export talk
+func talk(message string) string {
 	fmt.Println(message)
-}
 
-//export send
-func send() string {
 	return "Hello Duke! (from Gopher)"
 }
 
