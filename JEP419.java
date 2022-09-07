@@ -1,11 +1,11 @@
-import java.lang.foreign.*;
-import static java.lang.foreign.ValueLayout.*;
+import jdk.incubator.foreign.*;
+import static jdk.incubator.foreign.ValueLayout.*;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 import java.nio.charset.StandardCharsets;
 
-public class Main19 {
+public class JEP419 {
     private static class GoString {
         private static final OfAddress POINTER = ADDRESS.withName("p");
         private static final OfLong NUMBER = JAVA_LONG.withName("n");
@@ -15,14 +15,14 @@ public class Main19 {
         private static final VarHandle P = LAYOUT.varHandle(PathElement.groupElement(POINTER.name().get()));
         private static final VarHandle N = LAYOUT.varHandle(PathElement.groupElement(NUMBER.name().get()));
 
-        public static MemorySegment allocate(String str, MemorySession session) {
+        public static MemorySegment allocate(String str, ResourceScope scope) {
             byte[] b = str.getBytes(StandardCharsets.UTF_8);
             MemorySegment ptr = SegmentAllocator.implicitAllocator().allocate(b.length);
             for (int i = 0; i < b.length; i++) {
                 ptr.set(JAVA_BYTE, i, b[i]);
             }
 
-            MemorySegment memory = MemorySegment.allocateNative(LAYOUT, session);
+            MemorySegment memory = MemorySegment.allocateNative(LAYOUT, scope);
             P.set(memory, ptr.address());
             N.set(memory, ptr.byteSize());
 
@@ -50,14 +50,14 @@ public class Main19 {
     }
 
     private static void talk(String message) throws Throwable {
-        Linker linker = Linker.nativeLinker();
+        CLinker linker = CLinker.systemCLinker();
         SymbolLookup lookup = SymbolLookup.loaderLookup();
         MethodHandle recv = linker.downcallHandle(
                 lookup.lookup("talk").get(),
                 FunctionDescriptor.of(GoString.LAYOUT, GoString.LAYOUT));
 
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment address = (MemorySegment) recv.invoke(GoString.allocate(message, session));
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment address = (MemorySegment) recv.invoke(scope, GoString.allocate(message, scope));
 
             System.out.println(GoString.get(address));
         }
